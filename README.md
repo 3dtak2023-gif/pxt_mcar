@@ -1,3 +1,43 @@
+# SIYEENOVE mCar 日本語対応版
+
+micro:bit V2用ロボットカー「SIYEENOVE mCar」のMakeCode拡張機能を日本語化したものです。
+
+## 特徴
+
+- MakeCodeのブロックを日本語表示
+- 前進・後退・旋回・停止
+- 左右のモーター制御
+- 超音波センサー
+- ライントレースセンサー
+- RGB LEDヘッドライト
+- 赤外線リモコン
+- サーボモーター制御
+
+元のプログラムの制御処理は変更せず、表示を日本語化しています。
+
+## MakeCodeへの追加方法
+
+1. https://makecode.microbit.org/ を開く。
+2. 新しいプロジェクトを作成する。
+3. 「拡張機能」を選択する。
+4. 次のURLを検索欄に入力する。
+
+https://github.com/3dtak2023-gif/pxt_mcar
+
+5. 拡張機能を追加し、MakeCodeの表示言語を日本語にする。
+
+## ライセンス・原作者
+
+- 原作者：SIYEENOVE
+- オリジナル：https://github.com/siyeenove/pxt_mcar
+- ライセンス：MIT
+- 日本語翻訳：3dtak2023-gif
+
+本プロジェクトはSIYEENOVEの公式日本語版ではなく、コミュニティによる日本語対応版です。
+
+---
+
+以下はオリジナルのREADMEです。
 
 # Siyeenove mCar Package
 
