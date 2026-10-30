@@ -12,7 +12,8 @@
         "IR.cpp",
         "shims.d.ts",
         "enums.d.ts",
-        "_locales/zh-cn/pxt-mcar-strings.json"
+        "_locales/zh-cn/pxt-mcar-strings.json",
+        "_locales/ja/pxt-mcar-strings.json"
     ],
     "testFiles": [
         "test.ts"
