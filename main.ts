@@ -204,6 +204,9 @@ namespace mCar {
     let rightWheelSpeed = 0
     let threeWayStateValue = 0
 
+    // 第5段階：ラインセンサーピンの初期化状態
+    let trackingSensorInitialized = false
+
     let irstate: number;
     let state: number;
 
@@ -558,19 +561,25 @@ namespace mCar {
     //% group="Tracking sensor"
     //% weight=270
     //% block="read tracking sensor status"
-    export function trackbitStateValue() {
+    export function trackbitStateValue(): void {
         // left=P14, centre=P15, right=P16
-        let channel1 = 0, channel2 = 0, channel3 = 0;
 
-        pins.setPull(DigitalPin.P14, PinPullMode.PullUp);
-        pins.setPull(DigitalPin.P15, PinPullMode.PullUp);
-        pins.setPull(DigitalPin.P16, PinPullMode.PullUp);
+        // ピンのプルアップ設定は初回だけ実行
+        if (!trackingSensorInitialized) {
+            pins.setPull(DigitalPin.P14, PinPullMode.PullUp);
+            pins.setPull(DigitalPin.P15, PinPullMode.PullUp);
+            pins.setPull(DigitalPin.P16, PinPullMode.PullUp);
 
-        channel1 = pins.digitalReadPin(DigitalPin.P14);
-        channel2 = pins.digitalReadPin(DigitalPin.P15);
-        channel3 = pins.digitalReadPin(DigitalPin.P16);
+            trackingSensorInitialized = true;
+        }
 
-        threeWayStateValue = (channel1 << 2) + (channel2 << 1) + channel3;
+        // 3つのセンサーは呼び出しごとに読み取る
+        let left = pins.digitalReadPin(DigitalPin.P14);
+        let centre = pins.digitalReadPin(DigitalPin.P15);
+        let right = pins.digitalReadPin(DigitalPin.P16);
+
+        // 左・中央・右を3ビットの状態値に変換
+        threeWayStateValue = (left << 2) | (centre << 1) | right;
     }
 
     /**
@@ -600,19 +609,14 @@ namespace mCar {
     //% weight=240
     //% block="%channel tracking sensor state is %state"
     export function trackbitChannelState(channel: TrackbitChannel, state: TrackbitType): boolean {
-        if (state == TrackbitType.State1)
-            if (threeWayStateValue & (1 << (channel - 1))) {
-                return true
-            } else {
-                return false
-            }
-        else {
-            if (threeWayStateValue & (1 << (channel - 1))) {
-                return false
-            } else {
-                return true
-            }
+        if (channel < 1 || channel > 3) {
+            return false;
         }
+
+        let mask = 1 << (channel - 1);
+        let sensorValue = (threeWayStateValue & mask) != 0;
+
+        return sensorValue == (state == TrackbitType.State1);
     }
 
     /**
