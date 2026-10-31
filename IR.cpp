@@ -4,7 +4,7 @@
 //% icon="\uf1eb"
 namespace mCarInfrared {
 
-// All durations are in microseconds.
+// Timings are in microseconds. Idle waiting yields to other micro:bit fibers.
 static const uint32_t IDLE_TIMEOUT_US = 20000;
 static const uint32_t HEADER_TIMEOUT_US = 12000;
 static const uint32_t SPACE_TIMEOUT_US = 6000;
@@ -23,6 +23,23 @@ static bool wait_for_level(int level, uint32_t timeout_us) {
             return false;
     }
     return true;
+}
+
+// Only the idle-start search yields. Once a frame starts, microsecond
+// timing remains continuous so NEC decoding is not disrupted by scheduling.
+static int header_mark_duration() {
+    uint32_t start = system_timer_current_time_us();
+    while (uBit.io.P9.getDigitalValue() != 0) {
+        if ((uint32_t)(system_timer_current_time_us() - start) >= IDLE_TIMEOUT_US)
+            return -1;
+        fiber_sleep(1);
+    }
+    uint32_t mark_start = system_timer_current_time_us();
+    while (uBit.io.P9.getDigitalValue() == 0) {
+        if ((uint32_t)(system_timer_current_time_us() - mark_start) >= HEADER_TIMEOUT_US)
+            return -1;
+    }
+    return (int)((uint32_t)(system_timer_current_time_us() - mark_start));
 }
 
 static int pulse_duration(int level, uint32_t start_timeout_us,
@@ -74,18 +91,17 @@ static bool pulse_deal() {
 
 static void remote_decode() {
     data = 0;
-    int header_mark = pulse_duration(0, IDLE_TIMEOUT_US, HEADER_TIMEOUT_US);
-    if (header_mark < 8000 || header_mark > 10000)
+    int header_mark = header_mark_duration();
+    // fiber_sleep(1) can detect the leading edge up to about 1 ms late.
+    if (header_mark < 7000 || header_mark > 10000)
         return;
-
     int header_space = pulse_duration(1, SPACE_TIMEOUT_US, SPACE_TIMEOUT_US);
     if (header_space >= 4000 && header_space <= 5000) {
         if (pulse_deal()) data = ir_code;
         return;
     }
     if (header_space >= 2000 && header_space <= 2500) {
-        // NEC repeat frames contain no new command.
-        // Do not call the MakeCode callback again for a held button.
+        // Ignore NEC repeat frames, preserving the earlier long-press behavior.
         (void)pulse_duration(0, BIT_TIMEOUT_US, BIT_TIMEOUT_US);
         data = 0;
     }
