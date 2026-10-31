@@ -16,8 +16,6 @@ int ir_addr = 0;
 int data = 0;
 static bool has_previous_code = false;
 
-// Wait until P9 reaches `level`. Return false on timeout.
-// Subtraction handles wraparound of the microsecond counter.
 static bool wait_for_level(int level, uint32_t timeout_us) {
     uint32_t start = system_timer_current_time_us();
     while (uBit.io.P9.getDigitalValue() != level) {
@@ -27,7 +25,6 @@ static bool wait_for_level(int level, uint32_t timeout_us) {
     return true;
 }
 
-// Measure a pulse at `level` (after its transition), with bounded waits.
 static int pulse_duration(int level, uint32_t start_timeout_us,
                           uint32_t duration_timeout_us) {
     if (!wait_for_level(level, start_timeout_us))
@@ -65,7 +62,6 @@ static bool pulse_deal() {
         if (bit < 0) return false;
         command |= bit << i;
     }
-    // In the standard NEC format the second command byte is the inverse.
     int command_low = command & 0xff;
     int command_high = (command >> 8) & 0xff;
     if ((command_low ^ command_high) != 0xff)
@@ -77,7 +73,7 @@ static bool pulse_deal() {
 }
 
 static void remote_decode() {
-    data = 0; // 0 means no complete valid command in this call.
+    data = 0;
     int header_mark = pulse_duration(0, IDLE_TIMEOUT_US, HEADER_TIMEOUT_US);
     if (header_mark < 8000 || header_mark > 10000)
         return;
@@ -88,19 +84,20 @@ static void remote_decode() {
         return;
     }
     if (header_space >= 2000 && header_space <= 2500) {
-        int repeat_mark = pulse_duration(0, BIT_TIMEOUT_US, BIT_TIMEOUT_US);
-        if (repeat_mark >= 350 && repeat_mark <= 850 && has_previous_code)
-            data = ir_code;
+        // NEC repeat frames contain no new command.
+        // Do not call the MakeCode callback again for a held button.
+        (void)pulse_duration(0, BIT_TIMEOUT_US, BIT_TIMEOUT_US);
+        data = 0;
     }
 }
 
-//% 
+//%
 int irCode() {
     remote_decode();
     return data;
 }
 
-//% 
+//%
 int readPulseIn(int status) {
     return pulse_duration(status == 1 ? 1 : 0,
                           PULSE_TIMEOUT_US, PULSE_TIMEOUT_US);
