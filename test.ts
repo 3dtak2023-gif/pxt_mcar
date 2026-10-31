@@ -1,69 +1,120 @@
 
 /**
  * SIYEENOVE mCar extension test
- * Step 6: Safe functional verification
- *
- * A button : Run motors at 25% for 500ms
- * B button : Stop motors immediately
- * IR key 1 : Count received commands
- * IR OK    : Stop motors
- * Sensors  : Send 3-bit line state to serial
- *
- * IMPORTANT:
- * Keep the robot's wheels off the ground during testing.
+ * Original functions preserved
+ * Step 6: Fix wheel control argument order
  */
 
-// Stop both wheels at startup.
-mCar.carStop()
-
-let irCount = 0
-let motorTestRunning = false
-
-// A button: short, low-speed motor test.
-input.onButtonPressed(Button.A, function () {
-    if (motorTestRunning) {
-        return
+// Infrared remote control
+mCar.irCallBack(function () {
+    if (mCar.irButton(mCar.McarIRButtons.Up)) {
+        mCar.carDirectionSpeed(mCar.McarDir.FW, 100)
     }
 
-    motorTestRunning = true
-    serial.writeLine("Motor test START")
+    if (mCar.irButton(mCar.McarIRButtons.Down)) {
+        mCar.carDirectionSpeed(mCar.McarDir.BW, 100)
+    }
 
-    mCar.setWheelSpeed(25, 25)
-    basic.pause(500)
-    mCar.carStop()
+    if (mCar.irButton(mCar.McarIRButtons.Left)) {
+        mCar.carTurn(mCar.McarTurn.Left, 50, 100)
+    }
 
-    motorTestRunning = false
-    serial.writeLine("Motor test STOP")
-})
-
-// B button: emergency stop.
-input.onButtonPressed(Button.B, function () {
-    mCar.carStop()
-    motorTestRunning = false
-    serial.writeLine("B button STOP")
-})
-
-// Infrared receiver test.
-mCar.irCallBack(function () {
-    if (mCar.irButton(mCar.McarIRButtons.Number1)) {
-        irCount += 1
-        serial.writeValue("IR_Count", irCount)
+    if (mCar.irButton(mCar.McarIRButtons.Right)) {
+        mCar.carTurn(mCar.McarTurn.Right, 50, 100)
     }
 
     if (mCar.irButton(mCar.McarIRButtons.OK)) {
         mCar.carStop()
-        motorTestRunning = false
-        serial.writeLine("IR OK STOP")
     }
+
+    // Uncomment to display received IR codes.
+    // if (mCar.irValue() != 0) {
+    //     basic.showNumber(mCar.irValue())
+    // }
 })
 
-// Read the three tracking sensors.
+// Wheel speed calibration
+mCar.wheelsAdjustment(0, 0)
+
+// Check forward direction command
+basic.pause(1000)
+mCar.setWheelDirectionSpeed(
+    mCar.McarWheels.AllWheel,
+    mCar.WheelDir.FW,
+    0
+)
+
+// Check backward direction command
+basic.pause(1000)
+mCar.setWheelDirectionSpeed(
+    mCar.McarWheels.AllWheel,
+    mCar.WheelDir.BW,
+    0
+)
+
+// Stop left wheel
+basic.pause(1000)
+mCar.wheelStop(mCar.McarWheels.LeftWheel)
+
+// RGB headlights
+mCar.singleHeadlights(
+    mCar.McarRGBLight.RGBA,
+    255,
+    255,
+    255
+)
+
+// Battery level
+basic.showNumber(
+    mCar.batteryLevel(mCar.BatteryType.AA)
+)
+
+// Firmware version
+basic.pause(1000)
+basic.showString(mCar.readVersions())
+
+basic.pause(1000)
+
+// Tracking sensor, ultrasonic sensor and servo tests
 basic.forever(function () {
+
+    // Read three tracking sensors
     mCar.trackbitStateValue()
 
-    let lineState = mCar.returnGrayscaleSensorValue()
+    // All three sensors read state 1
+    if (mCar.readGrayscaleSensorState(
+        mCar.TrackbitStateType.TrackingState0
+    )) {
+        basic.showIcon(IconNames.No)
+        basic.pause(1000)
+    }
 
-    serial.writeValue("Line", lineState)
+    // Servo S1: 0 degrees
+    mCar.extendServoControl(
+        mCar.McarServoIndex.S1,
+        mCar.ServoType.Servo180,
+        0
+    )
 
-    basic.pause(100)
+    // All three sensors read state 0
+    if (mCar.readGrayscaleSensorState(
+        mCar.TrackbitStateType.TrackingState7
+    )) {
+        basic.showIcon(IconNames.Yes)
+        basic.pause(1000)
+    }
+
+    // Ultrasonic distance measurement
+    basic.showNumber(
+        mCar.sonar(mCar.SonarUnit.Centimeters)
+    )
+
+    basic.pause(1000)
+
+    // Servo S1: 180 degrees
+    mCar.extendServoControl(
+        mCar.McarServoIndex.S1,
+        mCar.ServoType.Servo180,
+        180
+    )
 })
