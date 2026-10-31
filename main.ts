@@ -1,6 +1,7 @@
+
 /*
 * This extension library was developed by the SIYEENOVE team.
-* Date: Dec 9, 2024  
+* Date: Dec 9, 2024
 */
 
 //% weight=10 color=#008C8C block="mCar" blockId="mCar" icon="\uf48b"
@@ -54,23 +55,22 @@ namespace mCar {
     }
 
     export enum TrackbitStateType {
-        //% block="◌ ◌ ◌" 
+        //% block="◌ ◌ ◌"
         TrackingState0 = 7,
-        //% block="◌ ◌ ●" 
+        //% block="◌ ◌ ●"
         TrackingState1 = 6,
-        //% block="◌ ● ◌" 
+        //% block="◌ ● ◌"
         TrackingState2 = 5,
-        //% block="◌ ● ●" 
+        //% block="◌ ● ●"
         TrackingState3 = 4,
 
-
-        //% block="● ◌ ◌" 
+        //% block="● ◌ ◌"
         TrackingState4 = 3,
-        //% block="● ◌ ●" 
+        //% block="● ◌ ●"
         TrackingState5 = 2,
-        //% block="● ● ◌" 
+        //% block="● ● ◌"
         TrackingState6 = 1,
-        //% block="● ● ●" 
+        //% block="● ● ●"
         TrackingState7 = 0
     }
 
@@ -80,6 +80,7 @@ namespace mCar {
         //% block="◌"
         State1 = 1
     }
+
     export enum TrackbitChannel {
         //% block="left"
         Three = 3,
@@ -198,7 +199,7 @@ namespace mCar {
         //%block="3-release"
         THREE0 = 15
     }
-    
+
     let IR_Val = 0
     let leftWheelSpeed = 0
     let rightWheelSpeed = 0
@@ -208,11 +209,9 @@ namespace mCar {
     let state: number;
 
     /*
-    * 
     * The I2C speed is 100Khz, and the slave address is 0x2a
     */
     let i2cAddr: number = 0x2a;
-
 
     /**
     * Set the speed and direction of the wheels
@@ -227,32 +226,31 @@ namespace mCar {
     //% weight=380
     export function setWheelDirectionSpeed(wheel: McarWheels, direction: WheelDir, speed: number): void {
         let i2cBuffer = pins.createBuffer(2)
-        
+
         if (wheel == McarWheels.LeftWheel || wheel == McarWheels.AllWheel) {
             leftWheelSpeed = speed;
             i2cBuffer[0] = 0x05;
-            if(direction == WheelDir.FW)         //forward
+            if(direction == WheelDir.FW)
                 i2cBuffer[1] = leftWheelSpeed + 101;
-            else if (direction == WheelDir.BW)   //backward
+            else if (direction == WheelDir.BW)
                 i2cBuffer[1] = leftWheelSpeed;
             pins.i2cWriteBuffer(i2cAddr, i2cBuffer);
         }
         if (wheel == McarWheels.RightWheel || wheel == McarWheels.AllWheel) {
             rightWheelSpeed = speed;
             i2cBuffer[0] = 0x06;
-            if(direction == WheelDir.FW)          //forward
+            if(direction == WheelDir.FW)
                 i2cBuffer[1] = rightWheelSpeed;
-            else if (direction == WheelDir.BW)    //backward
+            else if (direction == WheelDir.BW)
                 i2cBuffer[1] = rightWheelSpeed + 101;
             pins.i2cWriteBuffer(i2cAddr, i2cBuffer)
         }
     }
 
-
     /**
      * Set the speed and direction of the wheel.
-     * @param leftSpeed - Set the speed and direction of the left wheel. 
-     * @param rightSpeed - Set the speed and direction of the right wheel. 
+     * @param leftSpeed - Set the speed and direction of the left wheel.
+     * @param rightSpeed - Set the speed and direction of the right wheel.
      */
     //% group="Wheels"
     //% block="set left wheel speed %leftSpeed\\% right wheel speed %rightSpeed\\%"
@@ -261,7 +259,7 @@ namespace mCar {
     //% weight=379
     export function setWheelSpeed(leftSpeed: number, rightSpeed: number): void {
         let i2cBuffer = pins.createBuffer(2)
-        
+
         i2cBuffer[0] = 0x05;
         if (leftSpeed > 0){
             leftWheelSpeed = leftSpeed;
@@ -283,8 +281,7 @@ namespace mCar {
         pins.i2cWriteBuffer(i2cAddr, i2cBuffer)
     }
 
-
-    /** 
+    /**
      * Wheels stop.
      * @param wheel - The wheels of mCar.
      */
@@ -297,7 +294,7 @@ namespace mCar {
         if (wheel == McarWheels.LeftWheel || wheel == McarWheels.AllWheel) {
             leftWheelSpeed = 0;
             i2cBuffer[0] = 0x05;
-            i2cBuffer[1] = leftWheelSpeed; 
+            i2cBuffer[1] = leftWheelSpeed;
             pins.i2cWriteBuffer(i2cAddr, i2cBuffer)
         }
         if (wheel == McarWheels.RightWheel || wheel == McarWheels.AllWheel) {
@@ -308,8 +305,7 @@ namespace mCar {
         }
     }
 
-
-    /** 
+    /**
      * Wheels speed calibration.
      * When the speed of the left and right wheels of the mCar trolley is not consistent,
      * this function can adjust the speed of the wheel and save it permanently.
@@ -331,13 +327,12 @@ namespace mCar {
         buffer[1] = offset1;
         pins.i2cWriteBuffer(i2cAddr, buffer)
         basic.pause(10);
-        
+
         buffer[0] = 0x04;
         buffer[1] = offset2;
         pins.i2cWriteBuffer(i2cAddr, buffer)
         basic.pause(10);
     }
-
 
     /**
      * Set car direction.
@@ -361,7 +356,6 @@ namespace mCar {
         }
     }
 
-
     /**
      * Car turn.
      * @param direction - The direction of the mCar runs.
@@ -384,12 +378,11 @@ namespace mCar {
         else if (direction == McarTurn.Right) {
             leftWheelSpeed = speed;
             setWheelDirectionSpeed(McarWheels.LeftWheel, WheelDir.FW, leftWheelSpeed);
-    
+
             rightWheelSpeed = speed - (speed*(percent/100));
             setWheelDirectionSpeed(McarWheels.RightWheel, WheelDir.FW, rightWheelSpeed);
         }
     }
-
 
     /**
      * Car turn at place.
@@ -413,8 +406,7 @@ namespace mCar {
         }
     }
 
-
-    /** 
+    /**
      * The car stopped
      */
     //% group="Car"
@@ -423,7 +415,6 @@ namespace mCar {
     export function carStop(): void {
         wheelStop(McarWheels.AllWheel);
     }
-
 
     /**
     * Set LED headlights.
@@ -465,7 +456,6 @@ namespace mCar {
         }
     }
 
-
     /**
     * Select a headlight and set the RGB color.
     * @param r - Red color value of RGB color. eg: 0
@@ -503,9 +493,8 @@ namespace mCar {
             buf[0] = 0x0c;
             buf[1] = b;
             pins.i2cWriteBuffer(i2cAddr, buf)
-        } 
+        }
     }
-
 
     /**
     * Turn off all the LED lights.
@@ -537,7 +526,6 @@ namespace mCar {
         pins.i2cWriteBuffer(i2cAddr, buf)
     }
 
-
     /**
     * Read 3 grayscale sensor values.
     */
@@ -557,7 +545,6 @@ namespace mCar {
         threeWayStateValue = (channel1 << 2) + (channel2 << 1) + channel3;
     }
 
-
     /**
      * Judge 3 gray sensor values.
      */
@@ -568,7 +555,6 @@ namespace mCar {
         return threeWayStateValue == state
     }
 
-
     /**
      * Return 3 grayscale sensor values.
      */
@@ -578,7 +564,6 @@ namespace mCar {
     export function returnGrayscaleSensorValue(): number {
         return threeWayStateValue
     }
-
 
     /**
      * Check whether the single grayscale Sensor is on the black line.
@@ -604,10 +589,9 @@ namespace mCar {
         }
     }
 
-
     /**
       * mCar extends the ultrasonic module to read the distance values measured by the ultrasonic module.
-      * Returns the distance value measured by the ultrasonic module, eg: Centimeters, Inch
+      * Returns the distance values measured by the ultrasonic module, eg: Centimeters, Inch
       */
     //% group="Sonar sensor"
     //% block="sonar distance %unit"
@@ -633,7 +617,7 @@ namespace mCar {
     }
 
     /**
-     * 
+     *
      */
     //% shim=mCarInfrared::irCode
     function irCode(): number {
@@ -641,16 +625,16 @@ namespace mCar {
     }
 
     /**
-      * This function runs in the background all the time to read the value 
+      * This function runs in the background all the time to read the value
       * to be controlled in the IR in real time.
       */
     //% group="Infrared sensor"
     //% weight=160
     //% block="on IR receiving"
-    export function irCallBack(handler: () => void) {  
+    export function irCallBack(handler: () => void) {
         //handler is the functional argument to the irCallback function and is the block
         //to be executed inside the irCallback function generation block.
-        pins.setPull(DigitalPin.P9, PinPullMode.PullUp)          
+        pins.setPull(DigitalPin.P9, PinPullMode.PullUp)
         control.inBackground(() => {
             while (true) {
                 // IR_Val = 8-bit command + 8-bit command inverse code
@@ -658,11 +642,10 @@ namespace mCar {
                 if (IR_Val > 0xff) {
                     handler()
                 }
-                basic.pause(20)
+                basic.pause(1)
             }
         })
     }
-
 
     /**
      * Select the value of the infrared key that you want to be pressed.
@@ -678,7 +661,6 @@ namespace mCar {
         return (IR_Val & 0x00ff) == irButton as number
     }
 
-
     /**
      * Read IR value.
      * The correct infrared key value can only be read
@@ -691,7 +673,6 @@ namespace mCar {
     export function irValue(): number {
         return IR_Val & 0x00ff;
     }
-
 
     /**
      * Servo control module, used for 90, 180, 270 degrees servo.
@@ -729,9 +710,8 @@ namespace mCar {
         pins.i2cWriteBuffer(i2cAddr, buf);
     }
 
-
     /**
-     * The steering gear rotates continuously, and is used for the steering gear of 360 degrees rotation.
+     * The steering gear rotates continuously, and is used for 360 degrees rotation.
      * @param index - Servo interface on mCar, eg: S1, S2, S2
      * @param speed - The speed at which the servo rotates.
      */
@@ -744,7 +724,6 @@ namespace mCar {
         speed = Math.map(speed, -100, 100, 0, 180)
         extendServoControl(index, ServoType.Servo180, speed)
     }
-
 
     /**
      * Sets the battery type and returns the battery level.
@@ -766,10 +745,9 @@ namespace mCar {
         let batLevel = pins.i2cReadNumber(i2cAddr, NumberFormat.UInt8LE, false);
         if (batLevel>100)
             batLevel = 100;
-        
-        return batLevel; 
-    }
 
+        return batLevel;
+    }
 
     /**
      * Send a string to the left and right text fields of the APP via Bluetooth serial port.
@@ -822,10 +800,9 @@ namespace mCar {
         myButton = myButton + "#";
         if (myButton == cmdArray[button]) {
             return true;
-        } 
+        }
         return false;
     }
-
 
     /**
      * Read the firmware version of the chip on the mCar.
