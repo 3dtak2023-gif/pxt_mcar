@@ -1,54 +1,69 @@
-mCar.irCallBack(function () {
-    if (mCar.irButton(mCar.McarIRButtons.Up)) {
-        mCar.carDirectionSpeed(mCar.McarDir.FW, 100)
-    }
-    if (mCar.irButton(mCar.McarIRButtons.Down)) {
-        mCar.carDirectionSpeed(mCar.McarDir.BW, 100)
-    }
-    if (mCar.irButton(mCar.McarIRButtons.Left)) {
-        mCar.carTurn(mCar.McarTurn.Left, 50, 100)
-    }
-    if (mCar.irButton(mCar.McarIRButtons.Right)) {
-        mCar.carTurn(mCar.McarTurn.Right, 50, 100)
-    }
-    if (mCar.irButton(mCar.McarIRButtons.OK)) {
-        mCar.carStop()
+
+/**
+ * SIYEENOVE mCar extension test
+ * Step 6: Safe functional verification
+ *
+ * A button : Run motors at 25% for 500ms
+ * B button : Stop motors immediately
+ * IR key 1 : Count received commands
+ * IR OK    : Stop motors
+ * Sensors  : Send 3-bit line state to serial
+ *
+ * IMPORTANT:
+ * Keep the robot's wheels off the ground during testing.
+ */
+
+// Stop both wheels at startup.
+mCar.carStop()
+
+let irCount = 0
+let motorTestRunning = false
+
+// A button: short, low-speed motor test.
+input.onButtonPressed(Button.A, function () {
+    if (motorTestRunning) {
+        return
     }
 
-    // The correct infrared key value can only be read 
-    // when the infrared key value is not equal to 0 by logical judgment.
-    //if (mCar.irValue() != 0) {
-    //    basic.showNumber(mCar.irValue())
-    //}
+    motorTestRunning = true
+    serial.writeLine("Motor test START")
+
+    mCar.setWheelSpeed(25, 25)
+    basic.pause(500)
+    mCar.carStop()
+
+    motorTestRunning = false
+    serial.writeLine("Motor test STOP")
 })
 
-// When the speed of the left and right wheels of the mCar trolley is not consistent, 
-// this function can adjust the speed of the wheel and save it permanently.
-mCar.wheelsAdjustment(0, 0)
+// B button: emergency stop.
+input.onButtonPressed(Button.B, function () {
+    mCar.carStop()
+    motorTestRunning = false
+    serial.writeLine("B button STOP")
+})
 
-basic.pause(1000)
-mCar.setWheelDirectionSpeed(mCar.McarWheels.AllWheel, 0, mCar.WheelDir.FW)
-basic.pause(1000)
-mCar.setWheelDirectionSpeed(mCar.McarWheels.AllWheel, 0, mCar.WheelDir.BW)
-basic.pause(1000)
-mCar.wheelStop(mCar.McarWheels.LeftWheel)
-mCar.singleHeadlights(mCar.McarRGBLight.RGBA, 255, 255, 255)
-basic.showNumber(mCar.batteryLevel(mCar.BatteryType.AA))
-basic.pause(1000)
-basic.showString(mCar.readVersions())
-basic.pause(1000)
+// Infrared receiver test.
+mCar.irCallBack(function () {
+    if (mCar.irButton(mCar.McarIRButtons.Number1)) {
+        irCount += 1
+        serial.writeValue("IR_Count", irCount)
+    }
+
+    if (mCar.irButton(mCar.McarIRButtons.OK)) {
+        mCar.carStop()
+        motorTestRunning = false
+        serial.writeLine("IR OK STOP")
+    }
+})
+
+// Read the three tracking sensors.
 basic.forever(function () {
     mCar.trackbitStateValue()
-    if (mCar.readGrayscaleSensorState(mCar.TrackbitStateType.TrackingState0)) {
-        basic.showIcon(IconNames.No)
-        basic.pause(1000)
-    }
-    mCar.extendServoControl(mCar.McarServoIndex.S1, mCar.ServoType.Servo180, 0)
-    if (mCar.readGrayscaleSensorState(mCar.TrackbitStateType.TrackingState7)) {
-        basic.showIcon(IconNames.Yes)
-        basic.pause(1000)
-    }
-    basic.showNumber(mCar.sonar(mCar.SonarUnit.Centimeters))
-    basic.pause(1000)
-    mCar.extendServoControl(mCar.McarServoIndex.S1, mCar.ServoType.Servo180, 180)
+
+    let lineState = mCar.returnGrayscaleSensorValue()
+
+    serial.writeValue("Line", lineState)
+
+    basic.pause(100)
 })
